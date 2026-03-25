@@ -222,7 +222,7 @@ function renderWheel() {
     if (!svg) return;
 
     const cx = 200, cy = 200;
-    const rOuter = 160, rInner = 70;
+    const rOuter = 160, rInner = 50;
     const rLabel = 178;
 
     let html = '';
@@ -238,11 +238,6 @@ function renderWheel() {
         const isMainTick = h % 2 === 0;
 
         if (isMainTick) {
-            // Major tick line
-            const tickStart = polarToCartesian(cx, cy, rOuter + 8, angle);
-            const tickEnd = polarToCartesian(cx, cy, rOuter - 8, angle);
-            html += `<line x1="${tickStart.x}" y1="${tickStart.y}" x2="${tickEnd.x}" y2="${tickEnd.y}" stroke="#94a3b8" stroke-width="2" class="dark:stroke-slate-500"/>`;
-
             // Hour label
             const labelPos = polarToCartesian(cx, cy, rLabel + 15, angle);
             const hour12 = h === 0 ? '12AM' : h < 12 ? `${h}AM` : h === 12 ? '12PM' : `${h-12}PM`;
@@ -291,12 +286,15 @@ function renderEventList() {
 
     if (STATE.schedule.length === 0) {
         list.innerHTML = '<p class="text-sm text-slate-400 dark:text-slate-500">No events yet. Add one above!</p>';
+        document.getElementById('seeAllBtn').classList.add('hidden');
         return;
     }
 
     const sorted = [...STATE.schedule].sort((a, b) => a.startSlot - b.startSlot);
+    const displayCount = showAllEvents ? sorted.length : 2;
+    const displayed = sorted.slice(0, displayCount);
 
-    list.innerHTML = sorted.map(evt => `
+    list.innerHTML = displayed.map(evt => `
         <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-700/30 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all group">
             <div class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${evt.color}"></div>
             <div class="flex-1 min-w-0">
@@ -309,6 +307,15 @@ function renderEventList() {
             </div>
         </div>
     `).join('');
+
+    // Show/hide "See all" button
+    const seeAllBtn = document.getElementById('seeAllBtn');
+    if (sorted.length > 2) {
+        seeAllBtn.classList.remove('hidden');
+        seeAllBtn.textContent = showAllEvents ? 'Hide' : 'See all';
+    } else {
+        seeAllBtn.classList.add('hidden');
+    }
 }
 
 function renderScheduleAll() {
@@ -320,6 +327,7 @@ function renderScheduleAll() {
 // ─── FORM ─────────────────────────────────────────────────────────────────────
 
 let editingEventId = null;
+let showAllEvents = false;
 
 function openAddForm() {
     editingEventId = null;
@@ -437,6 +445,15 @@ function initScheduleWheel() {
     // Modal show: render wheel
     openAddForm();
     renderScheduleAll();
+
+    // "See all" button toggle
+    const seeAllBtn = document.getElementById('seeAllBtn');
+    if (seeAllBtn) {
+        seeAllBtn.addEventListener('click', () => {
+            showAllEvents = !showAllEvents;
+            renderEventList();
+        });
+    }
 }
 
 // ─── CURRENT ACTIVITY DISPLAY ─────────────────────────────────────────
